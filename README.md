@@ -23,7 +23,9 @@ go install github.com/leon123858/gmail-cli@latest
 1. Go to the Google Cloud Console
 2. Create a new project or select an existing one
 3. Enable the Gmail API for your project
-4. Create OAuth2 credentials (OAuth client ID)
+4. Create OAuth2 credentials (OAuth client ID For Web)
+   - Authorized JavaScript origins: `http://localhost:8080`
+   - Authorized redirect URIs: `http://localhost:8080/callback`
 5. Instead of downloading the credentials, note down the Client ID and Client Secret
 6. Set up your credentials using one of the methods below:
 

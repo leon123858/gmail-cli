@@ -24,6 +24,11 @@ func initConfig() {
 
 	// Create cache directory
 	cacheDir = path.Join(home, cacheDir)
+	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(cacheDir, 0700); err != nil {
+			cobra.CheckErr(fmt.Errorf("failed to create cache directory: %v", err))
+		}
+	}
 
 	// Search config in home directory with name ".gmail-cli/viper.json"
 	viperConfigPath := path.Join(home, ".gmail-cli")
