@@ -12,7 +12,14 @@ import (
 var cacheDir = ".gmail-cli"
 
 func GetTokenDir() string {
-	return path.Join(cacheDir, "tokens")
+	tokensDir := path.Join(cacheDir, "tokens")
+	// if directory not exist, create it
+	if _, err := os.Stat(tokensDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(tokensDir, 0700); err != nil {
+			cobra.CheckErr(fmt.Errorf("failed to create token directory: %v", err))
+		}
+	}
+	return tokensDir
 }
 
 func initConfig() {

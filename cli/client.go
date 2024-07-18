@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
@@ -21,7 +22,11 @@ const (
 	redirectURL = "http://localhost:8080/callback"
 )
 
-var mtx sync.Mutex
+var (
+	initServer sync.Once
+	mtx        sync.Mutex
+	codeChan   chan string
+)
 
 func getClient(email string) (*http.Client, error) {
 	config := &oauth2.Config{
@@ -37,7 +42,8 @@ func getClient(email string) (*http.Client, error) {
 	if err == nil {
 		return config.Client(context.Background(), token), nil
 	}
-
+	mtx.Lock()
+	defer mtx.Unlock()
 	token, err = getTokenFromWeb(config)
 	if err != nil {
 		return nil, err
@@ -53,8 +59,8 @@ func getTokenFromWeb(config *oauth2.Config) (*oauth2.Token, error) {
 	fmt.Printf("Go to the following link in your browser: \n%v\n", authURL)
 
 	openBrowser(authURL)
-
-	code := startServerAndWaitForCode()
+	startServerAndWaitForCode()
+	code := <-codeChan
 	if code == "" {
 		return nil, fmt.Errorf("didn't get authorization code")
 	}
@@ -66,29 +72,24 @@ func getTokenFromWeb(config *oauth2.Config) (*oauth2.Token, error) {
 	return token, nil
 }
 
-func startServerAndWaitForCode() string {
-	var authCode string
-	codeChan := make(chan string)
-
-	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		code := r.URL.Query().Get("code")
-		codeChan <- code
-		_, err := fmt.Fprintf(w, "Authorization successful! You can close this window now.")
-		if err != nil {
-			log.Printf("Error writing response: %v", err)
-			return
-		}
-	})
-	if mtx.TryLock() {
+func startServerAndWaitForCode() {
+	initServer.Do(func() {
+		codeChan = make(chan string)
+		http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+			code := r.URL.Query().Get("code")
+			codeChan <- code
+			_, err := fmt.Fprintf(w, "Authorization successful! You can close this window now.")
+			if err != nil {
+				log.Printf("Error writing response: %v", err)
+				return
+			}
+		})
 		go func() {
-			if err := http.ListenAndServe("localhost:8080", nil); err != nil {
-				log.Printf("Error starting server: %v", err)
+			if err := http.ListenAndServe("localhost:8080", nil); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Printf("HTTP server ListenAndServe: %v", err)
 			}
 		}()
-	}
-
-	authCode = <-codeChan
-	return authCode
+	})
 }
 
 func openBrowser(url string) {
@@ -97,8 +98,8 @@ func openBrowser(url string) {
 	switch runtime.GOOS {
 	case "linux":
 		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	//case "windows":
+	//	err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
 	case "darwin":
 		err = exec.Command("open", url).Start()
 	default:

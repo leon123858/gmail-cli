@@ -26,8 +26,6 @@ func readEmails(account string, numEmails int, wg *sync.WaitGroup) {
 		return
 	}
 
-	fmt.Printf("\nReading emails for %s\n", account)
-
 	// 獲取今天的日期，格式為 YYYY/MM/DD
 	today := time.Now().Format("2006/01/02")
 	query := fmt.Sprintf("after:%s", today)
