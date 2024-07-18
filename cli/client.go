@@ -14,11 +14,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sync"
 )
 
 const (
 	redirectURL = "http://localhost:8080/callback"
 )
+
+var mtx sync.Mutex
 
 func getClient(email string) (*http.Client, error) {
 	config := &oauth2.Config{
@@ -70,11 +73,16 @@ func startServerAndWaitForCode() string {
 	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		code := r.URL.Query().Get("code")
 		codeChan <- code
-		fmt.Fprintf(w, "Authorization successful! You can close this window now.")
+		_, err := fmt.Fprintf(w, "Authorization successful! You can close this window now.")
+		if err != nil {
+			log.Printf("Error writing response: %v", err)
+			return
+		}
 	})
-
+	mtx.Lock()
 	go func() {
-		if err := http.ListenAndServe(":8080", nil); err != nil {
+		defer mtx.Unlock()
+		if err := http.ListenAndServe("localhost:8080", nil); err != nil {
 			log.Printf("Error starting server: %v", err)
 		}
 	}()
@@ -106,7 +114,12 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			log.Fatalf("Unable to close file: %v", err)
+		}
+	}(f)
 	token := &oauth2.Token{}
 	err = json.NewDecoder(f).Decode(token)
 	return token, err
@@ -118,6 +131,15 @@ func saveToken(path string, token *oauth2.Token) {
 	if err != nil {
 		log.Fatalf("Unable to cache oauth token: %v", err)
 	}
-	defer f.Close()
-	json.NewEncoder(f).Encode(token)
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			log.Fatalf("Unable to close file: %v", err)
+		}
+	}(f)
+	err = json.NewEncoder(f).Encode(token)
+	if err != nil {
+		log.Fatalf("Unable to encode token: %v", err)
+		return
+	}
 }

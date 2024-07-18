@@ -3,7 +3,7 @@ all:
 
 deploy:
 	git ls-remote --tags origin
-	git tag v0.0.5
-	git push origin v0.0.5
+	git tag v0.0.6
+	git push origin v0.0.6
 	git tag lastest -f
 	git push origin lastest -f
