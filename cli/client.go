@@ -44,6 +44,7 @@ func getClient(email string) (*http.Client, error) {
 	}
 	mtx.Lock()
 	defer mtx.Unlock()
+	println("Choose account %s to authorize", email)
 	token, err = getTokenFromWeb(config)
 	if err != nil {
 		return nil, err
