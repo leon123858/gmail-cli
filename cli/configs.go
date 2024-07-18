@@ -40,6 +40,8 @@ func initConfig() {
 		if errors.As(err, &configFileNotFoundError) {
 			// Config file not found; using default config
 			viper.SetDefault("accounts", []string{})
+			viper.SetDefault("id", "")
+			viper.SetDefault("secret", "")
 			// create new viper config
 			if err := viper.SafeWriteConfig(); err != nil {
 				panic(err)

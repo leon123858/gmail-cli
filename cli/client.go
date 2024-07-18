@@ -15,10 +15,13 @@ import (
 	"runtime"
 )
 
+var (
+	clientID     = ""
+	clientSecret = ""
+)
+
 const (
-	clientID     = "1096689128023-jvtpq8miulqg0fgu39fsv2sk4ndlrnnb.apps.googleusercontent.com"
-	clientSecret = "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"
-	redirectURL  = "http://localhost:8080/callback"
+	redirectURL = "http://localhost:8080/callback"
 )
 
 func getClient(email string) (*http.Client, error) {

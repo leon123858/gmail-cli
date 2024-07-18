@@ -18,6 +18,19 @@ go install github.com/leon123858/gmail-cli@latest
 
 ## Usage
 
+### Configuration
+
+1. Go to the Google Cloud Console
+2. Create a new project or select an existing one
+3. Enable the Gmail API for your project
+4. Create OAuth2 credentials (OAuth client ID)
+5. Instead of downloading the credentials, note down the Client ID and Client Secret
+6. Set up your credentials using one of the methods below:
+
+```bash
+gmail-cli config set <your-client-id> <your-client-secret>
+```
+
 ### Adding an account
 
 To add a new Gmail account:
@@ -42,7 +55,7 @@ To read emails from all configured accounts:
 gmail-cli run read
 ```
 
-By default, this will retrieve the 10 most recent emails from each account. You can customize the number of emails to read using the `--count` or `-n` flag:
+By default, this will retrieve the 10 most recent emails **today** from each account. You can customize the number of emails to read using the `--count` or `-n` flag:
 
 ```bash
 gmail-cli run read --count 20

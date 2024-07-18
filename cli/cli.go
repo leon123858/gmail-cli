@@ -25,6 +25,7 @@ func init() {
 
 	configCmd.AddCommand(configAddCmd)
 	configCmd.AddCommand(configDeleteCmd)
+	configCmd.AddCommand(configSetCmd)
 
 	runCmd.AddCommand(runReadCmd)
 	runReadCmd.Flags().IntVarP(&numEmails, "count", "n", 10, "Number of emails to read from each account")
@@ -79,6 +80,25 @@ var configDeleteCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Deleted account: %s\n", email)
+	},
+}
+
+var configSetCmd = &cobra.Command{
+	Use:   "set <id> <secret>",
+	Short: "Set the client ID and secret on GCP OAuth2 credentials",
+	Args:  cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		id := args[0]
+		secret := args[1]
+
+		viper.Set("id", id)
+		viper.Set("secret", secret)
+		if err := viper.WriteConfig(); err != nil {
+			fmt.Printf("Error writing config: %v\n", err)
+			return
+		}
+
+		fmt.Println("Client ID and secret set.")
 	},
 }
 
