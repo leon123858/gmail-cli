@@ -28,7 +28,7 @@ func init() {
 	configCmd.AddCommand(configSetCmd)
 
 	runCmd.AddCommand(runReadCmd)
-	runReadCmd.Flags().IntVarP(&numEmails, "count", "n", 10, "Number of emails to read from each account")
+	runReadCmd.Flags().IntVarP(&numEmails, "count", "n", 20, "Number of emails to read from each account")
 }
 
 var configCmd = &cobra.Command{

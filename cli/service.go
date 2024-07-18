@@ -27,7 +27,7 @@ func readEmails(account string, numEmails int, wg *sync.WaitGroup) {
 	}
 
 	// 獲取今天的日期，格式為 YYYY/MM/DD
-	today := time.Now().Format("2006/01/02")
+	today := time.Now().Add(-24 * time.Hour).Format("2006/01/02")
 	query := fmt.Sprintf("after:%s", today)
 
 	msgs, err := gmailService.Users.Messages.List("me").Q(query).MaxResults(int64(numEmails)).Do()

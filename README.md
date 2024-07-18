@@ -57,7 +57,7 @@ To read emails from all configured accounts:
 gmail-cli run read
 ```
 
-By default, this will retrieve the 10 most recent emails **today** from each account. You can customize the number of emails to read using the `--count` or `-n` flag:
+By default, this will retrieve the 20 most recent emails **today** from each account. You can customize the number of emails to read using the `--count` or `-n` flag:
 
 ```bash
 gmail-cli run read --count 20
