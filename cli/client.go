@@ -79,13 +79,13 @@ func startServerAndWaitForCode() string {
 			return
 		}
 	})
-	mtx.Lock()
-	go func() {
-		defer mtx.Unlock()
-		if err := http.ListenAndServe("localhost:8080", nil); err != nil {
-			log.Printf("Error starting server: %v", err)
-		}
-	}()
+	if mtx.TryLock() {
+		go func() {
+			if err := http.ListenAndServe("localhost:8080", nil); err != nil {
+				log.Printf("Error starting server: %v", err)
+			}
+		}()
+	}
 
 	authCode = <-codeChan
 	return authCode
