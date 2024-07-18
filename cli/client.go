@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
@@ -15,19 +16,14 @@ import (
 	"runtime"
 )
 
-var (
-	clientID     = ""
-	clientSecret = ""
-)
-
 const (
 	redirectURL = "http://localhost:8080/callback"
 )
 
 func getClient(email string) (*http.Client, error) {
 	config := &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		ClientID:     viper.Get("id").(string),
+		ClientSecret: viper.Get("secret").(string),
 		RedirectURL:  redirectURL,
 		Scopes:       []string{gmail.GmailReadonlyScope},
 		Endpoint:     google.Endpoint,
