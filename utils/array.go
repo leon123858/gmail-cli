@@ -1,6 +1,6 @@
-package cli
+package utils
 
-func contains(slice []string, item string) bool {
+func Contains(slice []string, item string) bool {
 	for _, s := range slice {
 		if s == item {
 			return true
@@ -9,7 +9,7 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-func remove(slice []string, item string) []string {
+func Remove(slice []string, item string) []string {
 	for i, s := range slice {
 		if s == item {
 			return append(slice[:i], slice[i+1:]...)

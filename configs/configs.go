@@ -1,4 +1,4 @@
-package cli
+package configs
 
 import (
 	"errors"
@@ -22,7 +22,7 @@ func GetTokenDir() string {
 	return tokensDir
 }
 
-func initConfig() {
+func InitConfig() {
 	// Find home directory
 	home, err := os.UserHomeDir()
 	if err != nil {

@@ -1,10 +1,11 @@
-package cli
+package gmail
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/leon123858/gmail-cli/configs"
 	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -37,7 +38,7 @@ func getClient(email string) (*http.Client, error) {
 		Endpoint:     google.Endpoint,
 	}
 
-	tokenFile := filepath.Join(GetTokenDir(), fmt.Sprintf("%s.json", email))
+	tokenFile := filepath.Join(configs.GetTokenDir(), fmt.Sprintf("%s.json", email))
 	token, err := tokenFromFile(tokenFile)
 	if err == nil {
 		return config.Client(context.Background(), token), nil

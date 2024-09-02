@@ -1,12 +1,13 @@
-package cli
+package cmd
 
 import (
 	"fmt"
-	"os"
-	"sync"
-
+	"github.com/leon123858/gmail-cli/configs"
+	"github.com/leon123858/gmail-cli/gmail"
+	"github.com/leon123858/gmail-cli/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"sync"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 )
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(configs.InitConfig)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(runCmd)
 
@@ -44,7 +45,7 @@ var configAddCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		email := args[0]
 		accounts := viper.GetStringSlice("accounts")
-		if contains(accounts, email) {
+		if utils.Contains(accounts, email) {
 			fmt.Printf("Account %s already exists.\n", email)
 			return
 		}
@@ -67,12 +68,12 @@ var configDeleteCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		email := args[0]
 		accounts := viper.GetStringSlice("accounts")
-		if !contains(accounts, email) {
+		if !utils.Contains(accounts, email) {
 			fmt.Printf("Account %s does not exist.\n", email)
 			return
 		}
 
-		accounts = remove(accounts, email)
+		accounts = utils.Remove(accounts, email)
 		viper.Set("accounts", accounts)
 		if err := viper.WriteConfig(); err != nil {
 			fmt.Printf("Error writing config: %v\n", err)
@@ -121,15 +122,12 @@ var runReadCmd = &cobra.Command{
 		var wg sync.WaitGroup
 		for _, account := range accounts {
 			wg.Add(1)
-			go readEmails(account, numEmails, &wg)
+			go gmail.ReadEmails(account, numEmails, &wg)
 		}
 		wg.Wait()
 	},
 }
 
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+func Execute() error {
+	return rootCmd.Execute()
 }

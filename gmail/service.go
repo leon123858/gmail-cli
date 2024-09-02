@@ -1,4 +1,4 @@
-package cli
+package gmail
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func readEmails(account string, numEmails int, wg *sync.WaitGroup) {
+func ReadEmails(account string, numEmails int, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	client, err := getClient(account)

@@ -1,7 +1,14 @@
 package main
 
-import "github.com/leon123858/gmail-cli/cli"
+import (
+	"fmt"
+	"github.com/leon123858/gmail-cli/cmd"
+	"os"
+)
 
 func main() {
-	cli.Execute()
+	if err := cmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
