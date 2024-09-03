@@ -1,6 +1,7 @@
 # Gmail CLI Tool
 
-Gmail CLI is a command-line interface tool for managing and reading emails from multiple Gmail accounts using OAuth2 authentication.
+Gmail CLI is a command-line interface tool for managing and reading emails from multiple Gmail accounts using OAuth2
+authentication.
 
 ## Features
 
@@ -24,8 +25,8 @@ go install github.com/leon123858/gmail-cli@latest
 2. Create a new project or select an existing one
 3. Enable the Gmail API for your project
 4. Create OAuth2 credentials (OAuth client ID For Web)
-   - Authorized JavaScript origins: `http://localhost:8080`
-   - Authorized redirect URIs: `http://localhost:8080/callback`
+    - Authorized JavaScript origins: `http://localhost:8080`
+    - Authorized redirect URIs: `http://localhost:8080/callback`
 5. Instead of downloading the credentials, note down the Client ID and Client Secret
 6. Set up your credentials using one of the methods below:
 
@@ -57,7 +58,8 @@ To read emails from all configured accounts:
 gmail-cli run read
 ```
 
-By default, this will retrieve the 20 most recent emails **today** from each account. You can customize the number of emails to read using the `--count` or `-n` flag:
+By default, this will retrieve the 20 most recent emails **today** from each account. You can customize the number of
+emails to read using the `--count` or `-n` flag:
 
 ```bash
 gmail-cli run read --count 20

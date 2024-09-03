@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"github.com/leon123858/gmail-cli/configs"
+	"github.com/leon123858/gmail-cli/dashboard"
 	"github.com/leon123858/gmail-cli/gmail"
 	"github.com/leon123858/gmail-cli/utils"
+	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"sync"
@@ -23,6 +25,7 @@ func init() {
 	cobra.OnInitialize(configs.InitConfig)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(uiCmd)
 
 	configCmd.AddCommand(configAddCmd)
 	configCmd.AddCommand(configDeleteCmd)
@@ -30,12 +33,37 @@ func init() {
 
 	runCmd.AddCommand(runReadCmd)
 	runReadCmd.Flags().IntVarP(&numEmails, "count", "n", 20, "Number of emails to read from each account")
+
+	uiCmd.AddCommand(tuiCmd)
 }
 
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage configuration",
 	Long:  `Add or remove email accounts, and set the path to credentials.json file.`,
+}
+
+var uiCmd = &cobra.Command{
+	Use:   "ui",
+	Short: "Run the terminal UI",
+	Long:  "Run the terminal UI to read emails from multiple accounts",
+}
+
+var tuiCmd = &cobra.Command{
+	Use:   "tui",
+	Short: "Run the terminal UI",
+	Long:  "Run the terminal UI to read emails from multiple accounts",
+	Run: func(cmd *cobra.Command, args []string) {
+		layout := tview.NewFlex().
+			AddItem(dashboard.GetRootPages(), 0, 1, true)
+
+		// show the dashboard
+		dashboard.ShowBoard(dashboard.Board)
+
+		if err := tview.NewApplication().SetRoot(layout, true).Run(); err != nil {
+			panic(err)
+		}
+	},
 }
 
 var configAddCmd = &cobra.Command{
