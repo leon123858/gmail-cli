@@ -6,15 +6,14 @@ import (
 	"github.com/leon123858/gmail-cli/gmail"
 	"github.com/leon123858/gmail-cli/tui"
 	"github.com/spf13/viper"
-	"sync"
 )
 
 func NewMailsBoard() *tui.Flex {
 	leftList := tui.NewList()
-	rightList := tui.NewList()
+	rightText := tui.NewText()
 
 	leftList.SetBorder(true).SetTitle("Emails")
-	rightList.SetBorder(true).SetTitle("Text")
+	rightText.SetBorder(true).SetTitle("Text")
 
 	// init mail list
 	accounts := viper.GetStringSlice("accounts")
@@ -25,12 +24,12 @@ func NewMailsBoard() *tui.Flex {
 	flex := tui.NewFlex(false)
 
 	flex.AddItem(leftList, 0, 1, false)
-	flex.AddItem(rightList, 0, 1, false)
+	flex.AddItem(rightText, 0, 1, false)
 
 	flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRight:
-			app.SetFocus(rightList)
+			app.SetFocus(rightText)
 			return nil
 		case tcell.KeyLeft:
 			app.SetFocus(leftList)
@@ -40,32 +39,32 @@ func NewMailsBoard() *tui.Flex {
 		}
 	})
 
-	var mailResChans []chan gmail.MailResChanel
-	pageSize := 10
-	for i, account := range accounts {
-		mailResChans = append(mailResChans, make(chan gmail.MailResChanel))
-		go gmail.ReadEmails(account, pageSize, mailResChans[i])
-	}
+	{
+		var mailResChans []chan gmail.MailResChanel
+		pageSize := 30
+		for i, account := range accounts {
+			mailResChans = append(mailResChans, make(chan gmail.MailResChanel))
+			go gmail.ReadEmails(account, pageSize, mailResChans[i])
+		}
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(mailResChans))
-
-	for _, mailResChan := range mailResChans {
-		go func(mailResChan chan gmail.MailResChanel) {
-			for {
-				res := <-mailResChan
-				if res.Err != nil {
-					if res.Err.Error() == "EOF" {
-						wg.Done()
-						break
+		for _, mailResChan := range mailResChans {
+			go func(mailResChan chan gmail.MailResChanel) {
+				for {
+					res := <-mailResChan
+					if res.Err != nil {
+						if res.Err.Error() == "EOF" {
+							break
+						}
+						continue
 					}
-					continue
+					leftList.AddItem(res.Res.Subject, res.Account, 0, func() {
+						// set right text, as mail body
+						rightText.SetText(fmt.Sprintf("From: %s\nDate: %s\n\n%s", res.Res.From, res.Res.Date, res.Res.Body), false)
+					})
 				}
-				leftList.AddItem(res.Res.Subject, res.Account, 0, nil)
-			}
-		}(mailResChan)
+			}(mailResChan)
+		}
 	}
-	wg.Wait()
 
 	app.SetFocus(leftList)
 

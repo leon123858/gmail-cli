@@ -2,18 +2,44 @@ package gmail
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
 	"log"
+	"strings"
 	"time"
 )
+
+func removeHTMLTagsWithGoquery(html string) string {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+	if err != nil {
+		return ""
+	}
+
+	// 獲取所有文本節點
+	doc.Find("style").Remove() // 移除所有 style 標籤
+	text := doc.Find("*").Text()
+	// 去除空白字符
+	text = strings.TrimSpace(text)
+	return text
+}
+
+func base64Decode(s string) string {
+	data, err := base64.URLEncoding.DecodeString(s)
+	if err != nil {
+		return "error decoding base64"
+	}
+	return string(data)
+}
 
 type Mail struct {
 	Subject string
 	From    string
 	Date    string
+	Body    string
 }
 
 type MailResChanel struct {
@@ -67,8 +93,39 @@ func ReadEmails(account string, numEmails int, ch chan MailResChanel) {
 				date = header.Value
 			}
 		}
+		var body string
+		switch m.Payload.MimeType {
+		case "text/plain":
+			body = base64Decode(m.Payload.Body.Data)
+		case "text/html":
+			body = removeHTMLTagsWithGoquery(base64Decode(m.Payload.Body.Data))
+		case "multipart/alternative":
+			for _, part := range m.Payload.Parts {
+				switch part.MimeType {
+				case "text/plain":
+					body += base64Decode(part.Body.Data)
+				case "text/html":
+					body += removeHTMLTagsWithGoquery(base64Decode(part.Body.Data))
+				default:
+					body += "Unknown message type: " + part.MimeType
+				}
+			}
+		case "multipart/mixed":
+			for _, part := range m.Payload.Parts {
+				switch part.MimeType {
+				case "text/plain":
+					body += base64Decode(part.Body.Data)
+				case "text/html":
+					body += removeHTMLTagsWithGoquery(base64Decode(part.Body.Data))
+				default:
+					body += "Unknown message type: " + part.MimeType
+				}
+			}
+		default:
+			body = "Unknown message type: " + m.Payload.MimeType
+		}
 
-		ch <- MailResChanel{Res: Mail{Subject: subject, From: from, Date: date}, Account: account}
+		ch <- MailResChanel{Res: Mail{Subject: subject, From: from, Date: date, Body: body}, Account: account}
 
 		//fmt.Printf("%s: %s\n", account, subject)
 		//fmt.Println(strings.Repeat("-", 40))
