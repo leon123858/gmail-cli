@@ -29,3 +29,8 @@ func (f *Flex) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventK
 	f.Flex.SetInputCapture(capture)
 	return f
 }
+
+func (f *Flex) SetBorder(show bool) *Flex {
+	f.Flex.SetBorder(show)
+	return f
+}

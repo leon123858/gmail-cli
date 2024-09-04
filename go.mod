@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/gdamore/tcell/v2 v2.7.4
+	github.com/rivo/tview v0.0.0-20240818110301-fd649dbf1223
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	golang.org/x/oauth2 v0.21.0
@@ -32,7 +33,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/rivo/tview v0.0.0-20240818110301-fd649dbf1223 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect

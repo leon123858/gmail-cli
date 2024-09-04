@@ -66,3 +66,11 @@ func (ta *App) NextWidgets(current tview.Primitive) tview.Primitive {
 	}
 	return ta.Widget[0]
 }
+
+func (ta *App) Stop() {
+	ta.App.Stop()
+}
+
+func (ta *App) SetFocus(w tview.Primitive) {
+	ta.App.SetFocus(w)
+}

@@ -2,27 +2,38 @@ package gmail
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
 	"log"
-	"strings"
-	"sync"
 	"time"
 )
 
-func ReadEmails(account string, numEmails int, wg *sync.WaitGroup) {
-	defer wg.Done()
+type Mail struct {
+	Subject string
+	From    string
+	Date    string
+}
 
+type MailResChanel struct {
+	Account string
+	Res     Mail
+	Err     error
+}
+
+func ReadEmails(account string, numEmails int, ch chan MailResChanel) {
 	client, err := getClient(account)
 	if err != nil {
 		log.Printf("Failed to get client for %s: %v", account, err)
+		ch <- MailResChanel{Err: errors.New("EOF")}
 		return
 	}
 
 	gmailService, err := gmail.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
 		log.Printf("Failed to create Gmail service for %s: %v", account, err)
+		ch <- MailResChanel{Err: errors.New("EOF")}
 		return
 	}
 
@@ -33,6 +44,7 @@ func ReadEmails(account string, numEmails int, wg *sync.WaitGroup) {
 	msgs, err := gmailService.Users.Messages.List("me").Q(query).MaxResults(int64(numEmails)).Do()
 	if err != nil {
 		log.Printf("Failed to retrieve messages for %s: %v", account, err)
+		ch <- MailResChanel{Err: errors.New("EOF")}
 		return
 	}
 
@@ -40,22 +52,27 @@ func ReadEmails(account string, numEmails int, wg *sync.WaitGroup) {
 		m, err := gmailService.Users.Messages.Get("me", msg.Id).Do()
 		if err != nil {
 			log.Printf("Failed to retrieve message details for %s: %v", account, err)
+			ch <- MailResChanel{Err: errors.New("failed to retrieve message details")}
 			continue
 		}
 
-		var subject, _, _ string
+		var subject, from, date string
 		for _, header := range m.Payload.Headers {
 			switch header.Name {
 			case "Subject":
 				subject = header.Value
-				//case "From":
-				//	from = header.Value
-				//case "Date":
-				//	date = header.Value
+			case "From":
+				from = header.Value
+			case "Date":
+				date = header.Value
 			}
 		}
 
-		fmt.Printf("%s: %s\n", account, subject)
-		fmt.Println(strings.Repeat("-", 40))
+		ch <- MailResChanel{Res: Mail{Subject: subject, From: from, Date: date}, Account: account}
+
+		//fmt.Printf("%s: %s\n", account, subject)
+		//fmt.Println(strings.Repeat("-", 40))
 	}
+
+	ch <- MailResChanel{Err: errors.New("EOF")}
 }

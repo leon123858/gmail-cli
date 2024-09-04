@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"github.com/leon123858/gmail-cli/configs"
 	"github.com/leon123858/gmail-cli/dashboard"
-	"github.com/leon123858/gmail-cli/gmail"
 	"github.com/leon123858/gmail-cli/utils"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"sync"
 )
 
 var (
@@ -30,11 +28,6 @@ func init() {
 	configCmd.AddCommand(configAddCmd)
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configSetCmd)
-
-	runCmd.AddCommand(runReadCmd)
-	runReadCmd.Flags().IntVarP(&numEmails, "count", "n", 20, "Number of emails to read from each account")
-
-	uiCmd.AddCommand(tuiCmd)
 }
 
 var configCmd = &cobra.Command{
@@ -47,18 +40,12 @@ var uiCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Run the terminal UI",
 	Long:  "Run the terminal UI to read emails from multiple accounts",
-}
-
-var tuiCmd = &cobra.Command{
-	Use:   "tui",
-	Short: "Run the terminal UI",
-	Long:  "Run the terminal UI to read emails from multiple accounts",
 	Run: func(cmd *cobra.Command, args []string) {
 		layout := tview.NewFlex().
 			AddItem(dashboard.GetRootPages(), 0, 1, true)
 
 		// show the dashboard
-		dashboard.ShowBoard(dashboard.Board)
+		dashboard.ShowBoard(dashboard.MailsBoard)
 
 		if err := tview.NewApplication().SetRoot(layout, true).Run(); err != nil {
 			panic(err)
@@ -135,25 +122,6 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run Gmail operations",
 	Long:  `Execute Gmail operations such as reading emails.`,
-}
-
-var runReadCmd = &cobra.Command{
-	Use:   "read",
-	Short: "Read emails from configured accounts",
-	Run: func(cmd *cobra.Command, args []string) {
-		accounts := viper.GetStringSlice("accounts")
-		if len(accounts) == 0 {
-			fmt.Println("No accounts configured. Use 'gmail-cli config add <email>' to add an account.")
-			return
-		}
-
-		var wg sync.WaitGroup
-		for _, account := range accounts {
-			wg.Add(1)
-			go gmail.ReadEmails(account, numEmails, &wg)
-		}
-		wg.Wait()
-	},
 }
 
 func Execute() error {
