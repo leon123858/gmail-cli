@@ -133,3 +133,31 @@ func ReadEmails(account string, numEmails int, ch chan MailResChanel) {
 
 	ch <- MailResChanel{Err: errors.New("EOF")}
 }
+
+func SendEmail(account string, to string, subject string, body string) error {
+	client, err := getClient(account)
+	if err != nil {
+		return fmt.Errorf("failed to get client for %s: %w", account, err)
+	}
+
+	gmailService, err := gmail.NewService(context.Background(), option.WithHTTPClient(client))
+	if err != nil {
+		return fmt.Errorf("failed to create Gmail service for %s: %w", account, err)
+	}
+
+	message := gmail.Message{
+		Raw: base64.URLEncoding.EncodeToString([]byte(
+			"To: " + to + "\r\n" +
+				"Subject: " + subject + "\r\n" +
+				"\r\n" +
+				body,
+		)),
+	}
+
+	_, err = gmailService.Users.Messages.Send("me", &message).Do()
+	if err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
+}

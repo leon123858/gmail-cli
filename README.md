@@ -65,6 +65,20 @@ emails to read using the `--count` or `-n` flag:
 gmail-cli run read --count 20
 ```
 
+### Sending emails
+
+To send an email from a configured account:
+
+```bash
+gmail-cli run send <recipient-email> "<subject>" "<body>"
+```
+
+By default, the email will be sent from the first account you added. To specify which account to send from, use the `--account` flag:
+
+```bash
+gmail-cli run send <recipient-email> "<subject>" "<body>" --account your.email@gmail.com
+```
+
 ## Command Structure
 
 - `gmail-cli`: Root command
@@ -73,6 +87,7 @@ gmail-cli run read --count 20
         - `delete <email>`: Delete an email account
     - `run`: Run Gmail operations
         - `read`: Read emails from configured accounts
+        - `send <to> <subject> <body>`: Send an email
 
 ## Contributing
 

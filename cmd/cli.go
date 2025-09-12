@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/leon123858/gmail-cli/configs"
 	"github.com/leon123858/gmail-cli/dashboard"
+	"github.com/leon123858/gmail-cli/gmail"
 	"github.com/leon123858/gmail-cli/utils"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
@@ -28,6 +29,9 @@ func init() {
 	configCmd.AddCommand(configAddCmd)
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configSetCmd)
+
+	runCmd.AddCommand(sendCmd)
+	sendCmd.Flags().String("account", "", "Account to send email from")
 }
 
 var configCmd = &cobra.Command{
@@ -122,6 +126,37 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run Gmail operations",
 	Long:  `Execute Gmail operations such as reading emails.`,
+}
+
+var sendCmd = &cobra.Command{
+	Use:   "send <to> <subject> <body>",
+	Short: "Send an email",
+	Args:  cobra.ExactArgs(3),
+	Run: func(cmd *cobra.Command, args []string) {
+		account, _ := cmd.Flags().GetString("account")
+		if account == "" {
+			accounts := viper.GetStringSlice("accounts")
+			if len(accounts) == 0 {
+				fmt.Println("No accounts configured. Please add an account using 'gmail-cli config add <email>'")
+				return
+			}
+			account = accounts[0]
+		}
+
+		to := args[0]
+		subject := args[1]
+		body := args[2]
+
+		fmt.Printf("Sending email from %s to %s...\n", account, to)
+
+		err := gmail.SendEmail(account, to, subject, body)
+		if err != nil {
+			fmt.Printf("Error sending email: %v\n", err)
+			return
+		}
+
+		fmt.Println("Email sent successfully.")
+	},
 }
 
 func Execute() error {

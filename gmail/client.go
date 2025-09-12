@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -34,7 +35,7 @@ func getClient(email string) (*http.Client, error) {
 		ClientID:     viper.Get("id").(string),
 		ClientSecret: viper.Get("secret").(string),
 		RedirectURL:  redirectURL,
-		Scopes:       []string{gmail.GmailReadonlyScope},
+		Scopes:       []string{gmail.GmailReadonlyScope, gmail.GmailSendScope},
 		Endpoint:     google.Endpoint,
 	}
 
@@ -96,6 +97,11 @@ func startServerAndWaitForCode() {
 
 func openBrowser(url string) {
 	var err error
+
+	if !strings.HasPrefix(url, "https://accounts.google.com/") {
+		log.Printf("Error opening browser: invalid url %s", url)
+		return
+	}
 
 	switch runtime.GOOS {
 	case "linux":
