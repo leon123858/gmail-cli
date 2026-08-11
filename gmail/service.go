@@ -19,10 +19,10 @@ func removeHTMLTagsWithGoquery(html string) string {
 		return ""
 	}
 
-	// 獲取所有文本節點
-	doc.Find("style").Remove() // 移除所有 style 標籤
+	// Get all text nodes
+	doc.Find("style").Remove() // Remove all style tags
 	text := doc.Find("*").Text()
-	// 去除空白字符
+	// Remove whitespace characters
 	text = strings.TrimSpace(text)
 	return text
 }
@@ -49,7 +49,7 @@ type MailResChanel struct {
 }
 
 func ReadEmails(account string, numEmails int, ch chan MailResChanel) {
-	// 獲取今天的日期，格式為 YYYY/MM/DD
+	// Get today's date, formatted as YYYY/MM/DD
 	today := time.Now().Add(-24 * time.Hour).Format("2006/01/02")
 	query := fmt.Sprintf("after:%s", today)
 	listEmails(account, query, numEmails, ch)
