@@ -49,6 +49,19 @@ type MailResChanel struct {
 }
 
 func ReadEmails(account string, numEmails int, ch chan MailResChanel) {
+	// 獲取今天的日期，格式為 YYYY/MM/DD
+	today := time.Now().Add(-24 * time.Hour).Format("2006/01/02")
+	query := fmt.Sprintf("after:%s", today)
+	listEmails(account, query, numEmails, ch)
+}
+
+// SearchEmails lists messages matching the Gmail query (advanced search syntax) for an account.
+// Streams Mail results through ch; a single MailResChanel with Err == "EOF" marks completion.
+func SearchEmails(account string, query string, numEmails int, ch chan MailResChanel) {
+	listEmails(account, query, numEmails, ch)
+}
+
+func listEmails(account string, query string, numEmails int, ch chan MailResChanel) {
 	client, err := getClient(account)
 	if err != nil {
 		log.Printf("Failed to get client for %s: %v", account, err)
@@ -62,10 +75,6 @@ func ReadEmails(account string, numEmails int, ch chan MailResChanel) {
 		ch <- MailResChanel{Err: errors.New("EOF")}
 		return
 	}
-
-	// 獲取今天的日期，格式為 YYYY/MM/DD
-	today := time.Now().Add(-24 * time.Hour).Format("2006/01/02")
-	query := fmt.Sprintf("after:%s", today)
 
 	msgs, err := gmailService.Users.Messages.List("me").Q(query).MaxResults(int64(numEmails)).Do()
 	if err != nil {
@@ -82,54 +91,55 @@ func ReadEmails(account string, numEmails int, ch chan MailResChanel) {
 			continue
 		}
 
-		var subject, from, date string
-		for _, header := range m.Payload.Headers {
-			switch header.Name {
-			case "Subject":
-				subject = header.Value
-			case "From":
-				from = header.Value
-			case "Date":
-				date = header.Value
-			}
-		}
-		var body string
-		switch m.Payload.MimeType {
-		case "text/plain":
-			body = base64Decode(m.Payload.Body.Data)
-		case "text/html":
-			body = removeHTMLTagsWithGoquery(base64Decode(m.Payload.Body.Data))
-		case "multipart/alternative":
-			for _, part := range m.Payload.Parts {
-				switch part.MimeType {
-				case "text/plain":
-					body += base64Decode(part.Body.Data)
-				case "text/html":
-					body += removeHTMLTagsWithGoquery(base64Decode(part.Body.Data))
-				default:
-					body += "Unknown message type: " + part.MimeType
-				}
-			}
-		case "multipart/mixed":
-			for _, part := range m.Payload.Parts {
-				switch part.MimeType {
-				case "text/plain":
-					body += base64Decode(part.Body.Data)
-				case "text/html":
-					body += removeHTMLTagsWithGoquery(base64Decode(part.Body.Data))
-				default:
-					body += "Unknown message type: " + part.MimeType
-				}
-			}
-		default:
-			body = "Unknown message type: " + m.Payload.MimeType
-		}
-
-		ch <- MailResChanel{Res: Mail{Subject: subject, From: from, Date: date, Body: body}, Account: account}
-
-		//fmt.Printf("%s: %s\n", account, subject)
-		//fmt.Println(strings.Repeat("-", 40))
+		ch <- MailResChanel{Res: parseMessage(m), Account: account}
 	}
 
 	ch <- MailResChanel{Err: errors.New("EOF")}
+}
+
+func parseMessage(m *gmail.Message) Mail {
+	var subject, from, date string
+	for _, header := range m.Payload.Headers {
+		switch header.Name {
+		case "Subject":
+			subject = header.Value
+		case "From":
+			from = header.Value
+		case "Date":
+			date = header.Value
+		}
+	}
+	var body string
+	switch m.Payload.MimeType {
+	case "text/plain":
+		body = base64Decode(m.Payload.Body.Data)
+	case "text/html":
+		body = removeHTMLTagsWithGoquery(base64Decode(m.Payload.Body.Data))
+	case "multipart/alternative":
+		for _, part := range m.Payload.Parts {
+			switch part.MimeType {
+			case "text/plain":
+				body += base64Decode(part.Body.Data)
+			case "text/html":
+				body += removeHTMLTagsWithGoquery(base64Decode(part.Body.Data))
+			default:
+				body += "Unknown message type: " + part.MimeType
+			}
+		}
+	case "multipart/mixed":
+		for _, part := range m.Payload.Parts {
+			switch part.MimeType {
+			case "text/plain":
+				body += base64Decode(part.Body.Data)
+			case "text/html":
+				body += removeHTMLTagsWithGoquery(base64Decode(part.Body.Data))
+			default:
+				body += "Unknown message type: " + part.MimeType
+			}
+		}
+	default:
+		body = "Unknown message type: " + m.Payload.MimeType
+	}
+
+	return Mail{Subject: subject, From: from, Date: date, Body: body}
 }

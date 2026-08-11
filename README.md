@@ -65,6 +65,51 @@ emails to read using the `--count` or `-n` flag:
 gmail-cli run read --count 20
 ```
 
+### Searching emails
+
+To search emails across all configured accounts using Gmail's search and filter syntax:
+
+```bash
+gmail-cli run search <keyword>
+```
+
+The `<keyword>` supports Gmail's [advanced search syntax](https://support.google.com/mail/answer/7190), for example:
+
+```bash
+gmail-cli run search "from:example@gmail.com is:unread"
+gmail-cli run search "subject:invoice"
+gmail-cli run search "hello --count 50"
+```
+
+By default, up to 20 matching messages are retrieved per account. You can customize this with the `--count` or `-n`
+flag.
+
+#### Searching by date
+
+Date filters are supported natively by Gmail's search syntax, either as absolute dates or relative periods:
+
+```bash
+# Absolute dates (YYYY/MM/DD format)
+gmail-cli run search "after:2026/01/01"                            # After a date
+gmail-cli run search "before:2026/06/30"                           # Before a date
+gmail-cli run search "after:2026/01/01 before:2026/03/01"          # Date range
+
+# Relative periods (d = days, m = months, y = years)
+gmail-cli run search "newer_than:7d"                               # Last 7 days
+gmail-cli run search "older_than:1y"                               # More than 1 year ago
+gmail-cli run search "newer_than:3m older_than:6m"                 # Between 3 and 6 months ago
+
+# Combined with other filters
+gmail-cli run search "from:example@gmail.com after:2026/01/01"
+```
+
+Two caveats when filtering by date:
+
+- Absolute dates in `after:`/`before:` are interpreted as midnight **PST** (Pacific Time), not your local timezone.
+  For hour-level precision, use Unix epoch seconds instead: `gmail-cli run search "after:1714608000 before:1717200000"`.
+- `before:<date>` is exclusive — it matches messages up to the previous day, so use `before:` of the day after your
+  intended cutoff.
+
 ## Command Structure
 
 - `gmail-cli`: Root command
@@ -72,7 +117,7 @@ gmail-cli run read --count 20
         - `add <email>`: Add a new email account
         - `delete <email>`: Delete an email account
     - `run`: Run Gmail operations
-        - `read`: Read emails from configured accounts
+        - `search <keyword>`: Search emails using Gmail search syntax
 
 ## Contributing
 
