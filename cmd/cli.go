@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/leon123858/gmail-cli/configs"
 	"github.com/leon123858/gmail-cli/dashboard"
+	"github.com/leon123858/gmail-cli/gmail"
 	"github.com/leon123858/gmail-cli/utils"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
@@ -28,6 +29,9 @@ func init() {
 	configCmd.AddCommand(configAddCmd)
 	configCmd.AddCommand(configDeleteCmd)
 	configCmd.AddCommand(configSetCmd)
+
+	runCmd.AddCommand(runSearchCmd)
+	runSearchCmd.Flags().IntVarP(&numEmails, "count", "n", 20, "Number of emails to retrieve per account")
 }
 
 var configCmd = &cobra.Command{
@@ -122,6 +126,40 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run Gmail operations",
 	Long:  `Execute Gmail operations such as reading emails.`,
+}
+
+var runSearchCmd = &cobra.Command{
+	Use:   "search <keyword>",
+	Short: "Search emails using Gmail search syntax",
+	Long:  `Search emails across all configured accounts using Gmail's search and filter syntax, e.g. "from:foo@gmail.com is:unread".`,
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		keyword := args[0]
+		accounts := viper.GetStringSlice("accounts")
+		if len(accounts) == 0 {
+			fmt.Println("No accounts configured. Use 'gmail-cli config add <email>' first.")
+			return
+		}
+
+		ch := make(chan gmail.MailResChanel)
+		remaining := len(accounts)
+		for _, account := range accounts {
+			go gmail.SearchEmails(account, keyword, numEmails, ch)
+		}
+
+		for remaining > 0 {
+			res := <-ch
+			if res.Err != nil && res.Err.Error() == "EOF" {
+				remaining--
+				continue
+			}
+			if res.Err != nil {
+				fmt.Printf("[%s] error: %v\n", res.Account, res.Err)
+				continue
+			}
+			fmt.Printf("[%s] %s | %s | %s\n", res.Account, res.Res.Date, res.Res.From, res.Res.Subject)
+		}
+	},
 }
 
 func Execute() error {
